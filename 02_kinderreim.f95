@@ -9,8 +9,6 @@ module children
 	
 	type(child),pointer::firstChild=>null()
 
-	!private
-	!public :: PUT_CYCLE, INIT_CYCLE, LAST_ONE, BUILD_CYCLE, DEL_NEXT
 	contains
 
 	subroutine PUT_CYCLE(fst)
@@ -19,11 +17,11 @@ module children
 		write(*,*) 'Remaining children:'
 		if (associated(current)) then
 			!loop over children until you are back at the first child
-			do while (.not.associated(current%nextChild,fst))
+			do
 				write(*,*) current%name
 				current=>current%nextChild
+				if (associated(current,fst)) exit
 			enddo
-			write(*,*) current%name
 		endif
 	end subroutine PUT_CYCLE
 
@@ -42,7 +40,7 @@ module children
    		integer :: age,n
 		character(len=10)::name
 		open(unit=20,file='KREIM.DAT',status='old',action='read',iostat=io_error)
-		if ( io_error == 0) then
+		if (io_error == 0) then
 			do n = 1, 15
 				!read next child
 				read(20,*,iostat=io_error) name,age
@@ -66,10 +64,9 @@ module children
 			tmp%nextChild=>firstChild
 			BUILD_CYCLE=>firstChild
 		else
-			write(*,*) 'Beim OEffenen der Datei ist ein Fehler Nr.',io_error,' aufgetreten'
+			write(*,*) 'Error ',io_error
 		end if
 		close(unit=20)
-		
 	end function BUILD_CYCLE
 
 	subroutine DEL_NEXT(elem)
