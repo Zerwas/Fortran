@@ -6,28 +6,24 @@ module game
     use Grafikmod
     integer, dimension(:,:)::f
     integer::n,m,i,j,k,ID
-    REAL, DIMENSION(1:20):: XC, YC
+    REAL, DIMENSION(1:40):: XC, YC
     REAL, PARAMETER :: Tau = 6.283185307
+    do k=1,40
+      XC(k)=-0.5+SIN(Tau*k/40)/2
+      YC(k)=-0.5+COS(Tau*k/40)/2
+    enddo
     ID= PG_OPEN(DEVICE = '/XWINDOW')
     !CALL PG_SET_LINE_WIDTH(LW= 4)
     CALL PG_ENVIRONMENT(xmin= REAL(0), xmax= REAL(n), ymin= REAL(0), ymax= REAL(m), JUST= 1, AXIS= 2) !Axis=-2?
     do j=m,1,-1
       do i=1,n
         if (f(j,i)==1) then
-          do k=1,20
-            XC(k)=i-0.5+SIN(Tau*k/20)/2
-            YC(k)=j-0.5+COS(Tau*k/20)/2
-          enddo
           CALL PG_SET_COLOR_INDEX(2) !0 to 15
-          CALL PG_PUT_POLYGON(20,XC,YC)
+          CALL PG_PUT_POLYGON(40,i+XC,j+YC)
         end if
         if (f(j,i)==-1) then
-          do k=1,20
-            XC(k)=i-0.5+SIN(Tau*k/20)/2
-            YC(k)=j-0.5+COS(Tau*k/20)/2
-          enddo
           CALL PG_SET_COLOR_INDEX(1) !0 to 15
-          CALL PG_PUT_POLYGON(20,XC,YC)
+          CALL PG_PUT_POLYGON(40,i+XC,j+YC)
         end if
       end do
     end do
@@ -68,40 +64,18 @@ module game
     Gewinn_Nr=0
     !horizontal
     do j=1,n
-      summ=f(j,1)+f(j,2)+f(j,3)+f(j,4)
 !abs(sum(f(j,1:4)))
-      if (summ==4) then
-        Gewinn_Nr=1
-      end if
-      if (summ==-4) then
-        Gewinn_Nr=-1
-      end if
-      do i=1,m-4
-        summ=summ+f(j,i+4)-f(j,i)
-        if (summ==4) then
-          Gewinn_Nr=1
-        end if
-        if (summ==-4) then
-          Gewinn_Nr=-1
+      do i=1,m-3
+        if (abs(sum(f(j,i:i+3)))==4) then
+          Gewinn_Nr=f(j,i)
         end if
       end do
     end do
     !vertical
     do i=1,m
-      summ=f(1,i)+f(2,i)+f(3,i)+f(4,i)
-      if (summ==4) then
-        Gewinn_Nr=1
-      end if
-      if (summ==-4) then
-        Gewinn_Nr=-1
-      end if
-      do j=1,n-4
-        summ=summ+f(j+4,i)-f(j,i)
-        if (summ==4) then
-          Gewinn_Nr=1
-        end if
-        if (summ==-4) then
-          Gewinn_Nr=-1
+      do j=1,n-3
+        if (abs(sum(f(j:j+3,i)))==4) then
+          Gewinn_Nr=f(j,i)
         end if
       end do
     end do
@@ -128,14 +102,14 @@ program vier
   integer::n,m,i,j,pl,column
   integer, dimension(:,:),allocatable:: field
   integer, dimension(:),allocatable:: columns
-  logical:: wrongnumber,notgameover,gonext=.True.
+  logical:: wrongnumber
   
-  do while (gonext)
+  do
     write(*,*) 'Enter Field size'
     read(*,*) m,n
     if (n<0.or.m<0) then
-      gonext=.False.
-    else
+      exit
+    endif
     allocate(field(m,n))
     allocate(columns(n))
     !init field
@@ -146,8 +120,7 @@ program vier
       end do
     end do
     pl=-1
-    notgameover=.True.
-    do while (notgameover)
+    do
       !get move
       call display(field,m,n)
       call displayadv(field,m,n)
@@ -166,18 +139,16 @@ program vier
       field(columns(column),column)=pl
       pl=-pl
       !game over?
-      notgameover=.False.
-      do j=1,n
-        if (columns(j)<m) then
-          notgameover=.True.
-        endif
-      end do
-      if (notgameover) then
-        notgameover=Gewinn_Nr(field,m,n)==0
+      if (sum(columns)==n*m) then
+        exit
+      endif
+      if (Gewinn_Nr(field,m,n)/=0) then
+        exit
       endif
     enddo
     !display end msg
-    call displayadv(field,m,n)
+    call display(field,m,n)
+    !call displayadv(field,m,n)
     if (Gewinn_Nr(field,m,n)==0) then
       write(*,*) 'Draw.'
     else
@@ -185,7 +156,6 @@ program vier
     endif
     deallocate(field)
     deallocate(columns)
-    endif
   enddo
   
 end program vier
