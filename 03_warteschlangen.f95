@@ -61,6 +61,7 @@ module queumod
 		else
 			tmp=>q%head
 			write(*,fmt='(I3)',advance='no') tmp%content
+			tmp=>tmp%next
 			do n=2,q%length
 				write(*,fmt='(A1,I3)',advance='no') ',',tmp%content
 				tmp=>tmp%next
@@ -76,7 +77,7 @@ program warteschlange
 	use queumod
 	implicit none
 	type(queue),dimension(:),allocatable::queues
-	integer::n,time,j,minq(1)
+	integer::n,time,j
 	real::w,h,content
 	logical::output
 	call RANDOM_SEED()
@@ -94,8 +95,8 @@ program warteschlange
 			output=.true.
 			!add customer to shortest queue
 			call RANDOM_NUMBER(content)
-			minq = minloc(queues (:) %length)
-			call enqueue(queues(minq(1)),floor(content*291+10))
+			!DIM=1 so return value of minloc is integer not array of integers
+			call enqueue(queues(minloc(queues (:) %length,DIM=1)),floor(content*291+10))
 		endif
 		!serve customers
 		do j=1,n
@@ -109,7 +110,7 @@ program warteschlange
 		enddo
 		if (output) then
 			!print current state
-			write(*,fmt='(A14,I5)') 'Aktuelle Zeit:',time
+			write(*,fmt='(A14,I2,A1,I2,A1,I2)') 'Aktuelle Zeit:',time/3600,':',mod(time,3600)/60,':',mod(time,60)
 			do j=1,n
 				write(*,fmt='(A14,I2)') 'Warteschlange:',j
 				call PUT(queues(j))
