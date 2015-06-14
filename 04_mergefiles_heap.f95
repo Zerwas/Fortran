@@ -21,43 +21,50 @@ module insertmerge
 		integer::levels,level,parent,parentId,i
 		!determine number of levels in heap
 		i=1
-		levels=0
-		do while (i<size(list))
+		levels=-1
+		do while (i<=size(list))
 			i=i*2
 			levels=levels+1
 		end do
 		write(*,*) levels
-		parentId=1
-		do level=levels,1,-1
-			do parent=0,level
+		i=i/4		
+		write(*,*) i
+		parentId=2*i-1
+		!heapify from bottom to top
+		!no need to heapify lowest level
+		do level=levels-1,0,-1
+			do parent=i-1,0,-1
+				write (*,*) level,parent,parentId,i
 				call Heapify(list,level,parent,parentId)
-				parentId=parentId+1
+				parentId=parentId-1
 			end do
+			i=i/2
 		end do
 	end subroutine Build_Heap
 
-	subroutine Heapify(list,level,parent,parentId)
+	recursive subroutine Heapify(list,level,parent,parentId)
 		type(filecomp),dimension(:),intent(inout)::list
 		integer::parentId,leftChildId,level,parent
 		type(filecomp)::tmp
 		leftChildId=2*parentId
 		!tausche rechtes Kind falls es existiert und größer ist als das linke Kind und Parent
- 		if (leftChildId+1<size(list) .and. list(parentId)<=list(leftChildId+1) .and. list(leftChildId)<=list(leftChildId+1)) then
+ 		if (leftChildId+1<=size(list) .and. list(leftChildId+1)<=list(parentId) .and. list(leftChildId+1)<=list(leftChildId)) then
 			!create new element so its not overwritten
 			tmp%content=list(parentId)%content
 			tmp%filenumber=list(parentId)%filenumber
 			list(parentId)=list(leftChildId+1)
 			list(leftChildId+1)=tmp
- 			call sink(list,level+1,parent+1,leftChildId+1)
-		end if
-
+ 			call Heapify(list,level+1,parent+1,leftChildId+1)
+		
+		else
  		!tausche linkes Kind falls es existiert und größer ist
-		if (leftChildId<size(list) .and. list(parentId)<=list(leftChildId)) then
+		if (leftChildId<=size(list) .and. list(leftChildId)<=list(parentId)) then
 			tmp%content=list(parentId)%content
 			tmp%filenumber=list(parentId)%filenumber
 			list(parentId)=list(leftChildId)
 			list(leftChildId)=tmp
-			call sink(list,level+1,parent,leftChildId)
+			call Heapify(list,level+1,parent,leftChildId)
+		end if
 		end if
 	end subroutine Heapify
 
@@ -69,7 +76,7 @@ program mergefiles
 	implicit none
 	type(filecomp),dimension(:),allocatable::Arbeitsfeld
 	type(filecomp)::tmp
-	integer::n,i,io_error
+	integer::n,i,io_error,j
 	character(2)::str
 	read(*,*) n
 	allocate(Arbeitsfeld(n))
@@ -91,14 +98,16 @@ program mergefiles
 	!------ Phase 3 ------
 	i=1
 	do while (i<=n)
-		write(22+n,*) Arbeitsfeld(i)%content
-		read(Arbeitsfeld(i)%filenumber,*,iostat=io_error) Arbeitsfeld(i)%content
+		write(22+n,*) Arbeitsfeld(1)%content
+		read(Arbeitsfeld(1)%filenumber,*,iostat=io_error) Arbeitsfeld(1)%content
 		!end of file?
 		if (io_error/=0) then
+			Arbeitsfeld(1)=Arbeitsfeld(n-i+1)
 			i=i+1
-		else
-			call Heapyfi(Arbeitsfeld(1:n-i+1),0,0,1)
 		end if
+		
+		call Heapify(Arbeitsfeld(1:n-i+1),0,0,1)
+		
 	end do
 end program mergefiles
 
