@@ -16,40 +16,50 @@ module insertmerge
 		leq=a%content<=b%content	
 	end function leq
 
-	subroutine sort(list)
+	subroutine Build_Heap(list)
 		type(filecomp),dimension(:),intent(inout)::list
-		integer::sep
-		do sep=size(list)-1,1,-1
-			call insert(list(sep:size(list)),list(sep))
+		integer::levels,level,parent,parentId,i
+		!determine number of levels in heap
+		i=1
+		levels=0
+		do while (i<size(list))
+			i=i*2
+			levels=levels+1
 		end do
-	end subroutine sort
+		write(*,*) levels
+		parentId=1
+		do level=levels,1,-1
+			do parent=0,level
+				call Heapify(list,level,parent,parentId)
+				parentId=parentId+1
+			end do
+		end do
+	end subroutine Build_Heap
 
-	subroutine insert(list,elem)
+	subroutine Heapify(list,level,parent,parentId)
 		type(filecomp),dimension(:),intent(inout)::list
-		type(filecomp),intent(in)::elem
-		integer::i,l,r
+		integer::parentId,leftChildId,level,parent
 		type(filecomp)::tmp
-		!create new element so its not overwritten
-		tmp%content=elem%content
-		tmp%filenumber=elem%filenumber
-		i=2
-		l=1
-		r=size(list)
-		!binary search
-		do while (l/=r)
-			if (list((l+r+1)/2)<=tmp) then
-				l=(l+r+1)/2
-			else
-				r=(l+r+1)/2-1
-			end if
-		end do
-		
-		do while (i<=l)
-			list(i-1)=list(i)
-			i=i+1
-		end do
-		list(l)=tmp
-	end subroutine insert
+		leftChildId=2*parentId
+		!tausche rechtes Kind falls es existiert und größer ist als das linke Kind und Parent
+ 		if (leftChildId+1<size(list) .and. list(parentId)<=list(leftChildId+1) .and. list(leftChildId)<=list(leftChildId+1)) then
+			!create new element so its not overwritten
+			tmp%content=list(parentId)%content
+			tmp%filenumber=list(parentId)%filenumber
+			list(parentId)=list(leftChildId+1)
+			list(leftChildId+1)=tmp
+ 			call sink(list,level+1,parent+1,leftChildId+1)
+		end if
+
+ 		!tausche linkes Kind falls es existiert und größer ist
+		if (leftChildId<size(list) .and. list(parentId)<=list(leftChildId)) then
+			tmp%content=list(parentId)%content
+			tmp%filenumber=list(parentId)%filenumber
+			list(parentId)=list(leftChildId)
+			list(leftChildId)=tmp
+			call sink(list,level+1,parent,leftChildId)
+		end if
+	end subroutine Heapify
 
 end module insertmerge
 
@@ -63,7 +73,6 @@ program mergefiles
 	character(2)::str
 	read(*,*) n
 	allocate(Arbeitsfeld(n))
-
 	!------ Phase 1 ------
 	!read files
 	do i=1,n
@@ -77,7 +86,7 @@ program mergefiles
 	!create outputfile
 	open(unit=22+n,file='ziel.dat',action='write')
 	!------ Phase 2 ------
-	call sort(Arbeitsfeld)
+	call Build_Heap(Arbeitsfeld)
 
 	!------ Phase 3 ------
 	i=1
@@ -88,7 +97,7 @@ program mergefiles
 		if (io_error/=0) then
 			i=i+1
 		else
-			call insert(Arbeitsfeld(i:n),Arbeitsfeld(i))
+			call Heapyfi(Arbeitsfeld(1:n-i+1),0,0,1)
 		end if
 	end do
 end program mergefiles
