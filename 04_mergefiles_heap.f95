@@ -76,7 +76,7 @@ program mergefiles
 	implicit none
 	type(filecomp),dimension(:),allocatable::Arbeitsfeld
 	type(filecomp)::tmp
-	integer::n,i,io_error,j
+	integer::n,i,io_error,j,h,h2
 	character(2)::str
 	read(*,*) n
 	allocate(Arbeitsfeld(n))
@@ -109,6 +109,18 @@ program mergefiles
 		call Heapify(Arbeitsfeld(1:n-i+1),0,0,1)
 		
 	end do
+	!close files
+	do i=1,n+1
+		close(21+i)
+	end do
+	!test whether ziel.dat is sorted
+	open(22,file='ziel.dat',action='read')
+	read(22,*,iostat=io_error) h
+	do while(io_error==0)
+		read(22,*,iostat=io_error) h2
+		if (h>h2) write(*,*) 'error'
+	end do
+	close(22)
 end program mergefiles
 
 
