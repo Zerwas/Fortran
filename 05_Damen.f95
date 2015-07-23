@@ -74,9 +74,4 @@ program queens
 		solutions=placeQueens(n,init)
 		Write(*,*) "Number of Solutions: ",solutions
 	end do
-	!------ Phase 1 ------
-	!read files
 end program queens
-!recursive function t result x
-!	integer::x
-!end function t
